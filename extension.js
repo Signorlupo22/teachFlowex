@@ -6,7 +6,9 @@ const http = require('http');
 const express = require('express');
 const url = require('url');
 const opn = require('opn');
-const WebSocket = require('ws');
+const path = require('path');
+
+const io = require('socket.io-client');
 
 //! https://github.com/microsoft/vscode-extension-samples
 
@@ -26,22 +28,11 @@ let server;
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-    // const codelensProvider = new CodelensProvider();
+    const socketPort = vscode.workspace.getConfiguration('devlern').get('port', 3000);
 
-    // vscode.languages.registerCodeLensProvider("*", codelensProvider);
-    // vscode.commands.registerCommand("devlern.enableCodeLens", () => {
-    //     vscode.workspace.getConfiguration("devlern").update("enableCodeLens", true, true);
-    // });
-
-    // vscode.commands.registerCommand("devlern.disableCodeLens", () => {
-    //     vscode.workspace.getConfiguration("devlern").update("enableCodeLens", false, true);
-    // });
-
-    // vscode.commands.registerCommand("devlern.codelensAction", (args) => {
-    //     vscode.window.showInformationMessage(`CodeLens action clicked with args=${args}`);
-    // });
     let server;
     let ws;
+    let socket;
 
     let startAuthCommand = vscode.commands.registerCommand('devlern.startAuth', async () => {
 
@@ -77,46 +68,40 @@ function activate(context) {
 
 
 
-    let connectToServerCommand = vscode.commands.registerCommand('devlern.connectToServer', async () => {
-        const token = context.workspaceState.get('sessionToken');
-        if (token) {
-            ws = new WebSocket('ws://localhost:3002');
-
-            ws.on('open', () => {
-                vscode.window.showInformationMessage('Connesso al server WebSocket');
-                ws.send(JSON.stringify({ type: 'auth', token: token }));
+    vscode.commands.registerCommand('devlern.startStreaming', () => {
+		// Establish websocket connection
+        try {
+            console.log('Trying to connect to WebSocket');
+            socket = io.io(`http://localhost:${socketPort}/api/socket`);
+    
+            socket.on('connect', () => {
+                console.log('WebSocket connection opened');
+                vscode.window.showInformationMessage('Connessione WebSocket aperta');
+                // Invia un messaggio di esempio al server
+                socket.emit('message', 'Ciao dal client VS Code');
             });
-
-            ws.on('message', (message) => {
-                vscode.window.showInformationMessage(`Messaggio ricevuto: ${message}`);
-                // Gestisci il messaggio ricevuto qui
+    
+            socket.on('message', (data) => {
+                console.log(`Received message from WebSocket: ${data}`);
+                vscode.window.showInformationMessage(`Messaggio dal server WebSocket: ${data}`);
             });
-
-            ws.on('close', () => {
-                vscode.window.showWarningMessage('Connessione WebSocket chiusa');
-            });
-
-            ws.on('error', (error) => {
-                console.error(error);
+    
+            socket.on('error', (error) => {
+                console.error(`WebSocket error: ${error.message}`);
                 vscode.window.showErrorMessage(`Errore WebSocket: ${error.message}`);
             });
-        } else {
-            vscode.window.showWarningMessage('Token di sessione non trovato');
+    
+            socket.on('disconnect', () => {
+                console.log('WebSocket connection closed');
+                vscode.window.showInformationMessage('Connessione WebSocket chiusa');
+            });
+        } catch (error) {
+            console.error(`WebSocket connection error: ${error.message}`);
+            vscode.window.showErrorMessage(`Errore WebSocket: ${error.message}`);
         }
-    });
+	});
 
-    context.subscriptions.push(connectToServerCommand);
 
-    let sendMessageCommand = vscode.commands.registerCommand('devlern.sendMessage', async () => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send('Hello from VS Code extension');
-            vscode.window.showInformationMessage('Messaggio inviato al server WebSocket');
-        } else {
-            vscode.window.showWarningMessage('Connessione WebSocket non aperta');
-        }
-    });
-
-    context.subscriptions.push(sendMessageCommand);
     
 }
 

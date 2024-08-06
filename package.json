@@ -35,6 +35,14 @@
       {
         "command": "devlern.sendMessage",
         "title": "sendMessage"
+      },
+      {
+        "command": "devlern.startStreaming",
+        "title": "startStreaming"
+      },
+      {
+        "command": "devlern.sendData",
+        "title": "sendData"
       }
     ]
   },
@@ -57,6 +65,7 @@
     "express": "^4.19.2",
     "next": "^14.2.5",
     "opn": "^6.0.0",
+    "socket.io-client": "^4.7.5",
     "ws": "^8.18.0"
   }
 }
