@@ -9,20 +9,10 @@ const opn = require('opn');
 const path = require('path');
 const WebSocket = require('ws');
 const io = require('socket.io-client');
-
+const jwt = require('jsonwebtoken');
 //! https://github.com/microsoft/vscode-extension-samples
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 
-const clientId = 'asdkjoiasdu28193shdjasd';
-const clientSecret = 'your-client-secret';
-const redirectUri = 'vscode://my-extension/callback';
-const authEndpoint = 'http://127.0.0.1:3000/api/Extension';
-const tokenEndpoint = 'http://127.0.0.1:3000/api/Extension';
-const sessionEndpoint = 'http://127.0.0.1:3000/api/Extension';
-
-let server;
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -34,20 +24,24 @@ function activate(context) {
     let ws;
     let socket;
     let uid;
-    let startAuthCommand = vscode.commands.registerCommand('devlern.startAuth', async () => {
 
+        
+        
+    let startAuthCommand = vscode.commands.registerCommand('devlern.startAuth', async () => {
+        
         try {
             const app = express();
+            const sessionId = 'session-' + Math.random().toString(36).slice(2);
 
             app.get('/callback', async (req, res) => {
                 const token = req.query.token;
                 if (token) {
                     context.workspaceState.update('sessionToken', token);
-                    res.send('Autenticazione completata. Puoi tornare a VS Code.');
-                    vscode.window.showInformationMessage('Autenticazione completata con successo.' + token);
-                    uid = token;
+                    // Serve the custom HTML file
+                    res.sendFile(path.join(__dirname, '/pageAuthSucces.html'));
 
-                    socket.send('message', 'Ciao dal client VS Code con uid : ' + uid); 
+                    vscode.window.showInformationMessage('Autenticazione completata con successo');
+                    uid = token;
                     server.close();
                 } else {
                     res.send('Errore nell\'autenticazione.');
@@ -58,7 +52,7 @@ function activate(context) {
                 console.log('Server in ascolto su http://localhost:3001');
             });
 
-            const authUrl = 'http://localhost:3000/api/Extension';
+            const authUrl = 'http://localhost:3000/api/Extension?sessionId=' + sessionId;
             opn(authUrl);
 
         } catch (error) {
@@ -113,6 +107,10 @@ function activate(context) {
     });
 
     
+}
+
+function generateUniqueToken(sessionId) {
+    return jwt.sign({ sessionId }, process.env.JWT_SECRET, { expiresIn: '1h' });
 }
 
 // This method is called when your extension is deactivated
