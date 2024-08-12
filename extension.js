@@ -19,6 +19,8 @@ const fs = require("fs");
  * @param {vscode.ExtensionContext} context
  */
 let ws;
+// const url = "https://teachflow.villafavero.com/api/Extension";
+const urls = "localhost:3000";
 function activate(context) {
     const socketPort = vscode.workspace
         .getConfiguration("devlern")
@@ -86,7 +88,7 @@ function activate(context) {
                 });
 
                 const authUrl =
-                    "http://localhost:3000/api/Extension?token=" + userInput;
+                    `http://${urls}/api/Extension?token=` + userInput;
                 opn(authUrl);
             } catch (error) {
                 console.error(error);
@@ -99,7 +101,7 @@ function activate(context) {
     function connectToWebSocket() {
         const jwt = context.workspaceState.get("jwt");
         const uid = context.workspaceState.get("uid");
-        ws = new WebSocket(`ws://localhost:${socketPort}/ws`, {
+        ws = new WebSocket(`ws://${urls}/ws`, {
             headers: {
                 Authorization: `Bearer ${jwt}`,
                 token: userInput,
@@ -231,9 +233,8 @@ function activate(context) {
                                     .then((success) => {
                                         if (success) {
                                             vscode.window.showInformationMessage(
-                                                `Linee ${json.startLine} - ${
-                                                    json.endLine ||
-                                                    json.startLine
+                                                `Linee ${json.startLine} - ${json.endLine ||
+                                                json.startLine
                                                 } rimosse in ${json.file}`
                                             );
                                         } else {
@@ -254,20 +255,73 @@ function activate(context) {
             case "createFile":
                 const createFilePath = path.join(currentDir, json.file);
                 const dirPath = path.dirname(createFilePath);
-    
+
                 // Crea le directory se non esistono
                 if (!fs.existsSync(dirPath)) {
                     fs.mkdirSync(dirPath, { recursive: true });
                 }
-    
+
                 if (fs.existsSync(createFilePath)) {
                     vscode.window.showErrorMessage(`Il file ${json.file} esiste già.`);
                     return;
                 }
-    
+
                 fs.writeFileSync(createFilePath, json.content || '', 'utf8');
                 vscode.window.showInformationMessage(`File ${json.file} creato con successo.`);
-                break;    
+                break;
+            case "highlightCode":
+                const highlightFilePath = path.join(currentDir, json.file);
+
+                if (!fs.existsSync(highlightFilePath)) {
+                    vscode.window.showErrorMessage(`File non trovato: ${json.file}`);
+                    return;
+                }
+
+                const highlightFileUri = vscode.Uri.file(highlightFilePath);
+
+                vscode.workspace.openTextDocument(highlightFileUri).then(document => {
+                    vscode.window.showTextDocument(document).then(editor => {
+                        const documentText = document.getText();
+                        const startIndex = documentText.indexOf(json.code);
+
+                        if (startIndex === -1) {
+                            vscode.window.showErrorMessage(`Codice non trovato nel file: ${json.code}`);
+                            return;
+                        }
+
+                        const startPosition = document.positionAt(startIndex);
+                        const endPosition = document.positionAt(startIndex + json.code.length);
+                        const range = new vscode.Range(startPosition, endPosition);
+
+                        // Seleziona e evidenzia il testo
+                        editor.selection = new vscode.Selection(startPosition, endPosition);
+                        editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+
+                        // Aggiungi un hover provider per visualizzare il tooltip
+                        const hoverProvider = vscode.languages.registerHoverProvider({ scheme: 'file', language: 'javascript' }, {
+                            provideHover: (document, position) => {
+                                if (range.contains(position)) {
+                                    return new vscode.Hover(json.tooltip);
+                                }
+                            }
+                        });
+
+                        // Mostra il tooltip subito dopo aver evidenziato
+                        vscode.commands.executeCommand('editor.action.showHover');
+
+                        // Registra il provider temporaneamente
+                        const disposable = vscode.Disposable.from(hoverProvider);
+
+                        // Rimuovi il provider dopo 10 secondi (o a piacere)
+                        setTimeout(() => {
+                            disposable.dispose();
+                        }, 10000);
+                    });
+                }, error => {
+                    vscode.window.showErrorMessage(`Errore nell'aprire il file: ${error.message}`);
+                });
+                break;
+
             default:
                 vscode.window.showErrorMessage("Tipo non riconosciuto.");
                 break;
@@ -285,3 +339,4 @@ module.exports = {
     activate,
     deactivate,
 };
+
