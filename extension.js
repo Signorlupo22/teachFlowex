@@ -239,9 +239,8 @@ function activate(context) {
                     }
                 );
                 break;
-            case "removeLines":
+            case "removeCode":
                 const removeFilePath = path.join(currentDir, json.file);
-
                 const removeFileUri = vscode.Uri.file(removeFilePath);
 
                 vscode.workspace.openTextDocument(removeFileUri).then(
@@ -249,43 +248,57 @@ function activate(context) {
                         vscode.window
                             .showTextDocument(document)
                             .then((editor) => {
-                                const startLine = json.startLine - 1; // Le linee inizia da 0
-                                const endLine = json.endLine
-                                    ? json.endLine - 1
-                                    : startLine; // Se endLine non è fornito, rimuove una sola linea
+                                const codeToRemove = json.code; // Il codice specifico da rimuovere
+                                const text = document.getText();
 
-                                const startPosition = new vscode.Position(
-                                    startLine,
-                                    0
-                                );
-                                const endPosition = new vscode.Position(
-                                    endLine,
-                                    document.lineAt(endLine).text.length
+                                const startIndex = text.indexOf(codeToRemove);
+                                if (startIndex === -1) {
+                                    vscode.window.showErrorMessage(
+                                        `Il codice specificato non è stato trovato in ${json.file}.`
+                                    );
+                                    return;
+                                }
+
+                                const startPosition =
+                                    document.positionAt(startIndex);
+                                const endPosition = document.positionAt(
+                                    startIndex + codeToRemove.length
                                 );
 
-                                editor
-                                    .edit((editBuilder) => {
-                                        editBuilder.delete(
-                                            new vscode.Range(
-                                                startPosition,
-                                                endPosition
-                                            )
-                                        );
-                                    })
-                                    .then((success) => {
-                                        if (success) {
-                                            vscode.window.showInformationMessage(
-                                                `Linee ${json.startLine} - ${
-                                                    json.endLine ||
-                                                    json.startLine
-                                                } rimosse in ${json.file}`
-                                            );
-                                        } else {
-                                            vscode.window.showErrorMessage(
-                                                "Errore durante la rimozione delle linee."
-                                            );
+                                // Creazione della decorazione per evidenziare il testo da rimuovere
+                                const decorationType =
+                                    vscode.window.createTextEditorDecorationType(
+                                        {
+                                            backgroundColor:
+                                                "rgba(255, 0, 0, 0.3)", // Rosso semi-trasparente
                                         }
-                                    });
+                                    );
+
+                                const range = new vscode.Range(
+                                    startPosition,
+                                    endPosition
+                                );
+                                editor.setDecorations(decorationType, [range]);
+
+                                // Rimozione della decorazione e del codice dopo 2 secondi
+                                setTimeout(() => {
+                                    editor.setDecorations(decorationType, []);
+                                    editor
+                                        .edit((editBuilder) => {
+                                            editBuilder.delete(range);
+                                        })
+                                        .then((success) => {
+                                            if (success) {
+                                                vscode.window.showInformationMessage(
+                                                    `Codice rimosso da ${json.file}`
+                                                );
+                                            } else {
+                                                vscode.window.showErrorMessage(
+                                                    "Errore durante la rimozione del codice."
+                                                );
+                                            }
+                                        });
+                                }, 2000);
                             });
                     },
                     (error) => {
@@ -332,7 +345,6 @@ function activate(context) {
                 );
 
                 break;
-
             case "highlightCode":
                 const highlightFilePath = path.join(currentDir, json.file);
 
