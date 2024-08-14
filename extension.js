@@ -39,11 +39,11 @@ function activate(context) {
     const currentDir = workspaceFolders[0].uri.fsPath;
 
     let startAuthCommand = vscode.commands.registerCommand(
-        "devlern.startAuth",
+        "devlern.startSession",
         async () => {
             userInput = await vscode.window.showInputBox({
-                prompt: "Inserisci il tuo Codice:",
-                placeHolder: "Scrivi qualcosa qui...",
+                prompt: "Insert your code here:",
+                placeHolder: "xx-xxx-xxx",
             });
 
             if (userInput == undefined) {
@@ -159,78 +159,95 @@ function activate(context) {
                 );
                 break;
             case "insertCode":
-                const [line, column] = json.lineAndColumn
-                    .split(":")
-                    .map(Number);
+                const searchString = json.searchString; // Stringa da cercare
                 const filePath = path.join(currentDir, json.file);
                 const fileUri = vscode.Uri.file(filePath);
+
                 vscode.workspace.openTextDocument(fileUri).then(
                     (document) => {
-                        vscode.window
-                            .showTextDocument(document)
-                            .then((editor) => {
-                                const position = new vscode.Position(
-                                    line - 1,
-                                    column - 1
-                                );
+                        const text = document.getText();
+                        const lines = text.split("\n");
+                        let line = -1;
 
-                                // Creazione della decorazione per evidenziare il testo
-                                const decorationType =
-                                    vscode.window.createTextEditorDecorationType(
-                                        {
-                                            backgroundColor:
-                                                "rgba(0, 255, 0, 0.3)", // Verde semi-trasparente
-                                        }
+                        // Cerca la stringa nel documento
+                        for (let i = 0; i < lines.length; i++) {
+                            if (lines[i].includes(searchString)) {
+                                line = i + 1; // Inserisce subito dopo la riga trovata
+                                break;
+                            }
+                        }
+
+                        if (line !== -1) {
+                            vscode.window
+                                .showTextDocument(document)
+                                .then((editor) => {
+                                    const position = new vscode.Position(
+                                        line,
+                                        0
                                     );
 
-                                editor
-                                    .edit((editBuilder) => {
-                                        editBuilder.insert(position, json.code);
-                                    })
-                                    .then((success) => {
-                                        if (success) {
-                                            vscode.window.showInformationMessage(
-                                                `Codice inserito in ${json.file} alla posizione ${json.lineAndColumn}`
-                                            );
+                                    // Creazione della decorazione per evidenziare il testo
+                                    const decorationType =
+                                        vscode.window.createTextEditorDecorationType(
+                                            {
+                                                backgroundColor:
+                                                    "rgba(0, 255, 0, 0.3)", // Verde semi-trasparente
+                                            }
+                                        );
 
-                                            // Calcolo del range per tutte le linee inserite
-                                            const startPos = position;
-                                            const lines = json.code.split("\n");
-                                            const endPos = new vscode.Position(
-                                                startPos.line +
-                                                    lines.length -
-                                                    1,
-                                                lines.length === 1
-                                                    ? startPos.character +
-                                                      lines[0].length
-                                                    : lines[lines.length - 1]
-                                                          .length
+                                    editor
+                                        .edit((editBuilder) => {
+                                            editBuilder.insert(
+                                                position,
+                                                `\n${json.code}`
                                             );
-                                            const range = new vscode.Range(
-                                                startPos,
-                                                endPos
-                                            );
+                                        })
+                                        .then((success) => {
+                                            if (success) {
+                                                vscode.window.showInformationMessage(
+                                                    `Codice inserito in ${json.file} dopo la stringa "${searchString}"`
+                                                );
 
-                                            // Applicazione della decorazione
-                                            editor.setDecorations(
-                                                decorationType,
-                                                [range]
-                                            );
+                                                const startPos = position;
+                                                const endPos =
+                                                    new vscode.Position(
+                                                        startPos.line +
+                                                            json.code.split(
+                                                                "\n"
+                                                            ).length -
+                                                            1,
+                                                        json.code
+                                                            .split("\n")
+                                                            .slice(-1)[0].length
+                                                    );
+                                                const range = new vscode.Range(
+                                                    startPos,
+                                                    endPos
+                                                );
 
-                                            // Rimozione della decorazione dopo 2 secondi
-                                            setTimeout(() => {
                                                 editor.setDecorations(
                                                     decorationType,
-                                                    []
+                                                    [range]
                                                 );
-                                            }, 2000);
-                                        } else {
-                                            vscode.window.showErrorMessage(
-                                                "Errore durante l'inserimento del codice."
-                                            );
-                                        }
-                                    });
-                            });
+
+                                                setTimeout(() => {
+                                                    editor.setDecorations(
+                                                        decorationType,
+                                                        []
+                                                    );
+                                                }, 2000);
+                                            } else {
+                                                vscode.window.showErrorMessage(
+                                                    "Errore durante l'inserimento del codice."
+                                                );
+                                            }
+                                        });
+                                });
+                        } else {
+                            vscode.window.showErrorMessage(
+                                `Stringa "${searchString}" non trovata nel file.`
+                            );
+                        }
                     },
                     (error) => {
                         vscode.window.showErrorMessage(
@@ -248,56 +265,86 @@ function activate(context) {
                         vscode.window
                             .showTextDocument(document)
                             .then((editor) => {
-                                const codeToRemove = json.code; // Il codice specifico da rimuovere
+                                const codeToRemove = json.code.split("\n"); // Codice da rimuovere, diviso per linee
                                 const text = document.getText();
+                                const lines = text.split("\n");
+                                let found = false;
 
-                                const startIndex = text.indexOf(codeToRemove);
-                                if (startIndex === -1) {
-                                    vscode.window.showErrorMessage(
-                                        `Il codice specificato non è stato trovato in ${json.file}.`
-                                    );
-                                    return;
-                                }
+                                const rangesToDelete = []; // Raccogliamo tutti i range da cancellare
 
-                                const startPosition =
-                                    document.positionAt(startIndex);
-                                const endPosition = document.positionAt(
-                                    startIndex + codeToRemove.length
-                                );
+                                codeToRemove.forEach((codeLine) => {
+                                    for (let i = 0; i < lines.length; i++) {
+                                        const line = lines[i];
+                                        const index = line.indexOf(codeLine);
 
-                                // Creazione della decorazione per evidenziare il testo da rimuovere
-                                const decorationType =
-                                    vscode.window.createTextEditorDecorationType(
-                                        {
-                                            backgroundColor:
-                                                "rgba(255, 0, 0, 0.3)", // Rosso semi-trasparente
+                                        if (index !== -1) {
+                                            found = true;
+                                            const startPosition =
+                                                new vscode.Position(i, index);
+                                            const endPosition =
+                                                new vscode.Position(
+                                                    i,
+                                                    index + codeLine.length
+                                                );
+                                            const range = new vscode.Range(
+                                                startPosition,
+                                                endPosition
+                                            );
+
+                                            // Creazione della decorazione per evidenziare il testo da rimuovere
+                                            const decorationType =
+                                                vscode.window.createTextEditorDecorationType(
+                                                    {
+                                                        backgroundColor:
+                                                            "rgba(255, 0, 0, 0.3)", // Rosso semi-trasparente
+                                                    }
+                                                );
+
+                                            editor.setDecorations(
+                                                decorationType,
+                                                [range]
+                                            );
+                                            rangesToDelete.push(range); // Aggiungiamo il range alla lista
                                         }
-                                    );
+                                    }
+                                });
 
-                                const range = new vscode.Range(
-                                    startPosition,
-                                    endPosition
-                                );
-                                editor.setDecorations(decorationType, [range]);
-
-                                // Rimozione della decorazione e del codice dopo 2 secondi
+                                // Rimozione delle decorazioni e delle linee dopo 2 secondi
                                 setTimeout(() => {
-                                    editor.setDecorations(decorationType, []);
-                                    editor
-                                        .edit((editBuilder) => {
-                                            editBuilder.delete(range);
-                                        })
-                                        .then((success) => {
-                                            if (success) {
-                                                vscode.window.showInformationMessage(
-                                                    `Codice rimosso da ${json.file}`
+                                    if (rangesToDelete.length > 0) {
+                                        editor.setDecorations(
+                                            vscode.window.createTextEditorDecorationType(
+                                                {}
+                                            ),
+                                            []
+                                        ); // Rimozione decorazione
+
+                                        editor
+                                            .edit((editBuilder) => {
+                                                rangesToDelete.forEach(
+                                                    (range) => {
+                                                        editBuilder.delete(
+                                                            range
+                                                        );
+                                                    }
                                                 );
-                                            } else {
-                                                vscode.window.showErrorMessage(
-                                                    "Errore durante la rimozione del codice."
-                                                );
-                                            }
-                                        });
+                                            })
+                                            .then((success) => {
+                                                if (success) {
+                                                    vscode.window.showInformationMessage(
+                                                        `Codice rimosso da ${json.file}`
+                                                    );
+                                                } else {
+                                                    vscode.window.showErrorMessage(
+                                                        "Errore durante la rimozione del codice."
+                                                    );
+                                                }
+                                            });
+                                    } else {
+                                        vscode.window.showErrorMessage(
+                                            `Il codice specificato non è stato trovato in ${json.file}.`
+                                        );
+                                    }
                                 }, 2000);
                             });
                     },

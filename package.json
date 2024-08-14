@@ -21,29 +21,11 @@
   "contributes": {
     "commands": [
       {
-        "command": "devlern.connectToBackend",
-        "title": "connect To Backend"
-      },
-      {
-        "command": "devlern.startAuth",
-        "title": "start Auth"
-      },
-      {
-        "command": "devlern.connectToServer",
-        "title": "connectToServer"
-      },
-      {
-        "command": "devlern.sendMessage",
-        "title": "sendMessage"
-      },
-      {
-        "command": "devlern.startStreaming",
-        "title": "startStreaming"
-      },
-      {
-        "command": "devlern.sendData",
-        "title": "sendData"
+        "command": "devlern.startSession",
+        "title": "Start session",
+        "category": "TeachFlow"
       }
+
     ]
   },
   "scripts": {
