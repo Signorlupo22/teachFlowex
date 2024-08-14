@@ -20,7 +20,7 @@ const fs = require("fs");
  */
 let ws;
 // const url = "https://teachflow.villafavero.com/api/Extension";
-const urls = "localhost:3000";
+const urls = "https://teachflow.app";
 function activate(context) {
     const socketPort = vscode.workspace
         .getConfiguration("devlern")
@@ -101,7 +101,7 @@ function activate(context) {
     function connectToWebSocket() {
         const jwt = context.workspaceState.get("jwt");
         const uid = context.workspaceState.get("uid");
-        ws = new WebSocket(`ws://${urls}/ws`, {
+        ws = new WebSocket(`wss://${urls}/ws`, {
             headers: {
                 Authorization: `Bearer ${jwt}`,
                 token: userInput,
