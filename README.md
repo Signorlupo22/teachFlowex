@@ -1,5 +1,14 @@
 # Teachflow VS Code Extension
 
+# Get started
+
+1. Open the command palette
+2. type start Session
+3. copy the code from the course/Demo
+4. enjoy
+
+rember to start the session in a blank folder or the git clone wont work
+
 ## Overview
 
 The **Teachflow VS Code Extension** is a powerful tool designed to enhance your development workflow within Visual Studio Code by allowing you to interact with a specific remote service. The extension integrates with the remote service hosted at `https://teachflow.app`, enabling you to perform various operations such as code insertion, code removal, file creation, and more directly from within VS Code.
