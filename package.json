@@ -3,7 +3,7 @@
   "publisher": "TeachFlow",
   "displayName": "TeachFlow",
   "description": "",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.91.0"
   },
@@ -15,13 +15,13 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.sendData"
   ],
   "main": "./extension.js",
+  "icon": "img/icon.png",
   "contributes": {
     "commands": [
       {
-        "command": "devlern.startSession",
+        "command": "Teachflow.startSession",
         "title": "Start session",
         "category": "TeachFlow"
       }

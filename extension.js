@@ -20,7 +20,7 @@ function activate(context) {
         return;
     }
     let startAuthCommand = vscode.commands.registerCommand(
-        "devlern.startSession",
+        "Teachflow.startSession",
         async () => {
             userInput = await vscode.window.showInputBox({
                 prompt: "Insert your code here:",

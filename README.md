@@ -1,8 +1,8 @@
-# DevLern VS Code Extension
+# Teachflow VS Code Extension
 
 ## Overview
 
-The **DevLern VS Code Extension** is a powerful tool designed to enhance your development workflow within Visual Studio Code by allowing you to interact with a specific remote service. The extension integrates with the remote service hosted at `https://teachflow.app`, enabling you to perform various operations such as code insertion, code removal, file creation, and more directly from within VS Code.
+The **Teachflow VS Code Extension** is a powerful tool designed to enhance your development workflow within Visual Studio Code by allowing you to interact with a specific remote service. The extension integrates with the remote service hosted at `https://teachflow.app`, enabling you to perform various operations such as code insertion, code removal, file creation, and more directly from within VS Code.
 
 ## Features
 
@@ -18,7 +18,7 @@ The **DevLern VS Code Extension** is a powerful tool designed to enhance your de
 
 ### 1. Start Authentication Session
 
-- **Command**: `devlern.startSession`
+- **Command**: `Teachflow.startSession`
 - **Description**: Initiates an authentication session by prompting the user to enter a code. The extension opens a browser window to complete the authentication process with `https://teachflow.app`. Upon successful authentication, the extension will connect to a WebSocket server at `https://teachflow.app`.
 
 ### 2. WebSocket Connection
@@ -69,8 +69,9 @@ The **DevLern VS Code Extension** is a powerful tool designed to enhance your de
 To modify or extend the functionality of this extension:
 
 1. Open the project in VS Code.
-2. Modify the `activate` function in `extension.js` to add or adjust commands and features.
-3. Press `F5` to test your changes in a new VS Code window.
+2. Modify the `src/functions.js` to add more function
+3. add into the switch in `src/websocket.js`
+4. Press `F5` to test your changes in a new VS Code window.
 
 ## Contributing
 
