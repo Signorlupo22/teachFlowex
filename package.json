@@ -1,9 +1,9 @@
 {
-  "name": "devlern",
-  "publisher": "devlern",
-  "displayName": "DevLern",
+  "name": "teachflow",
+  "publisher": "TeachFlow",
+  "displayName": "TeachFlow",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.91.0"
   },
@@ -51,6 +51,7 @@
     "next": "^14.2.5",
     "opn": "^6.0.0",
     "socket.io-client": "^4.7.5",
+    "vsce": "^2.15.0",
     "ws": "^8.18.0"
   }
 }
